@@ -15,11 +15,16 @@ impl KeyringPath {
                 location: file!().to_string(),
             });
         }
-        let absolute = std::fs::canonicalize(path).unwrap_or_else(|_| path.to_path_buf());
-        std::fs::create_dir_all(&absolute).map_err(|e| AgeCredentialsError::Io {
-            path: absolute.clone(),
+
+        std::fs::create_dir_all(path).map_err(|e| AgeCredentialsError::Io {
+            path: path.to_path_buf(),
             source: e,
         })?;
+        let absolute = std::fs::canonicalize(path).map_err(|e| AgeCredentialsError::Io {
+            path: path.to_path_buf(),
+            source: e,
+        })?;
+
         std::fs::create_dir_all(absolute.join("private")).map_err(|e| AgeCredentialsError::Io {
             path: absolute.join("private"),
             source: e,
@@ -28,6 +33,7 @@ impl KeyringPath {
             path: absolute.join("public"),
             source: e,
         })?;
+
         Ok(Self { root: absolute })
     }
 
