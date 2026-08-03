@@ -2,5 +2,15 @@
 name = "age-credentials"
 version = "0.1.0"
 edition = "2024"
+description = "Age-based identity and credential management library"
+license = "MIT"
+repository = "https://github.com/mroczect/age-credentials"
 
 [dependencies]
+librage = { git = "https://github.com/mroczect/librage.git" }
+thiserror = "2.0"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+zeroize = { version = "1", features = ["serde"] }
+dirs = "6"
+sha2 = "0.11"
