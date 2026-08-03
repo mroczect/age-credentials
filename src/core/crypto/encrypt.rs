@@ -16,7 +16,14 @@ pub fn encrypt(plaintext: &[u8], public_key: &str) -> Result<Vec<u8>> {
             message: err.message,
         });
     }
-    Ok(response.data.unwrap().ciphertext.to_vec())
+    let data = response
+        .data
+        .ok_or_else(|| AgeCredentialsError::EncryptionFailed {
+            recipients: vec![public_key.to_owned()],
+            code: "UNKNOWN".into(),
+            message: "librage returned success but no data".into(),
+        })?;
+    Ok(data.ciphertext.to_vec())
 }
 
 pub fn encrypt_multiple(plaintext: &[u8], public_keys: &[&str]) -> Result<Vec<u8>> {
@@ -35,5 +42,12 @@ pub fn encrypt_multiple(plaintext: &[u8], public_keys: &[&str]) -> Result<Vec<u8
             message: err.message,
         });
     }
-    Ok(response.data.unwrap().ciphertext.to_vec())
+    let data = response
+        .data
+        .ok_or_else(|| AgeCredentialsError::EncryptionFailed {
+            recipients: public_keys.iter().map(|s| s.to_string()).collect(),
+            code: "UNKNOWN".into(),
+            message: "librage returned success but no data".into(),
+        })?;
+    Ok(data.ciphertext.to_vec())
 }
