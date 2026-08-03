@@ -115,6 +115,7 @@ dependencies = [
 name = "age-credentials"
 version = "0.2.0"
 dependencies = [
+ "age",
  "color-eyre",
  "dirs",
  "eyre",
