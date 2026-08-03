@@ -24,7 +24,7 @@ fmt-check:
 	cargo fmt --all -- --check
 
 clippy:
-	cargo clippy -- -D warnings
+	cargo clippy --all-targets --all-features -- -D warnings
 
 lint: fmt clippy
 
