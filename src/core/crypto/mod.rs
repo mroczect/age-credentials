@@ -4,10 +4,3 @@ pub mod encrypt;
 pub mod keygen;
 pub mod passphrase;
 pub mod recipient;
-
-// pub use armor::*;
-// pub use decrypt::*;
-// pub use encrypt::*;
-// pub use keygen::*;
-// pub use passphrase::*;
-// pub use recipient::*;
