@@ -1,5 +1,4 @@
 use age_credentials::*;
-use serde_json;
 use std::time::SystemTime;
 
 #[test]
