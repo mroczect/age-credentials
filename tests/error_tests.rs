@@ -22,7 +22,6 @@ fn test_serialization_error_display() {
         source,
     };
     let msg = format!("{}", err);
-
     assert!(msg.contains("metadata"));
     assert!(msg.contains("/tmp/metadata.json"));
 
