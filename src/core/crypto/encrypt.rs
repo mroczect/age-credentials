@@ -1,6 +1,12 @@
 use crate::handler::error::{AgeCredentialsError, Result};
 
 pub fn encrypt(plaintext: &[u8], public_key: &str) -> Result<Vec<u8>> {
+    if public_key.is_empty() {
+        return Err(AgeCredentialsError::InvalidData {
+            context: "encrypt",
+            details: "public key is empty".into(),
+        });
+    }
     let response = librage::encrypt(plaintext, public_key);
     if !response.success {
         let err = response.error.expect("error field missing");
@@ -14,6 +20,12 @@ pub fn encrypt(plaintext: &[u8], public_key: &str) -> Result<Vec<u8>> {
 }
 
 pub fn encrypt_multiple(plaintext: &[u8], public_keys: &[&str]) -> Result<Vec<u8>> {
+    if public_keys.is_empty() {
+        return Err(AgeCredentialsError::InvalidData {
+            context: "encrypt multiple",
+            details: "at least one public key required".into(),
+        });
+    }
     let response = librage::encrypt_multiple(plaintext, public_keys);
     if !response.success {
         let err = response.error.expect("error field missing");
