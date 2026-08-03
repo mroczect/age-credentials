@@ -1,1 +1,27 @@
-// Placeholder – will be implemented in next versions.
+use crate::handler::error::{AgeCredentialsError, Result};
+
+pub fn encrypt(plaintext: &[u8], public_key: &str) -> Result<Vec<u8>> {
+    let response = librage::encrypt(plaintext, public_key);
+    if !response.success {
+        let err = response.error.expect("error field missing");
+        return Err(AgeCredentialsError::EncryptionFailed {
+            recipients: vec![public_key.to_owned()],
+            code: err.code,
+            message: err.message,
+        });
+    }
+    Ok(response.data.unwrap().ciphertext.to_vec())
+}
+
+pub fn encrypt_multiple(plaintext: &[u8], public_keys: &[&str]) -> Result<Vec<u8>> {
+    let response = librage::encrypt_multiple(plaintext, public_keys);
+    if !response.success {
+        let err = response.error.expect("error field missing");
+        return Err(AgeCredentialsError::EncryptionFailed {
+            recipients: public_keys.iter().map(|s| s.to_string()).collect(),
+            code: err.code,
+            message: err.message,
+        });
+    }
+    Ok(response.data.unwrap().ciphertext.to_vec())
+}

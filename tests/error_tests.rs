@@ -36,19 +36,6 @@ fn test_serialization_error_display() {
         msg
     );
 }
-#[test]
-fn test_crypto_error_display() {
-    let source = librage::LibrageError::InvalidPublicKey("bad key".into());
-    let err = AgeCredentialsError::Crypto {
-        operation: "encrypt",
-        identity: Some("alice@example.com".into()),
-        source,
-    };
-    let msg = format!("{}", err);
-    assert!(msg.contains("encrypt"));
-    assert!(msg.contains("alice@example.com"));
-    assert!(msg.contains("bad key"));
-}
 
 #[test]
 fn test_duplicate_identity_display() {
@@ -98,28 +85,30 @@ fn test_passphrase_incorrect_display() {
 
 #[test]
 fn test_encryption_failed_display() {
-    let source = librage::LibrageError::MissingRecipients;
     let err = AgeCredentialsError::EncryptionFailed {
         recipients: vec!["rec1".into(), "rec2".into()],
-        source,
+        code: "ENCRYPTION_FAILED".into(),
+        message: "Missing recipients".into(),
     };
     let msg = format!("{}", err);
     assert!(msg.contains("rec1"));
     assert!(msg.contains("rec2"));
+    assert!(msg.contains("ENCRYPTION_FAILED"));
     assert!(msg.contains("Missing recipients"));
 }
 
 #[test]
 fn test_decryption_failed_display() {
-    let source = librage::LibrageError::NoMatchingKeys;
     let err = AgeCredentialsError::DecryptionFailed {
         identity: Some("id1".into()),
         hint: "check passphrase or key file".into(),
-        source,
+        code: "DECRYPTION_FAILED".into(),
+        message: "No matching keys".into(),
     };
     let msg = format!("{}", err);
     assert!(msg.contains("id1"));
     assert!(msg.contains("check passphrase or key file"));
+    assert!(msg.contains("DECRYPTION_FAILED"));
     assert!(msg.contains("No matching keys"));
 }
 
@@ -197,25 +186,6 @@ fn test_manual_io_conversion() {
     };
     if let AgeCredentialsError::Io { source, .. } = &err {
         assert_eq!(source.kind(), io::ErrorKind::PermissionDenied);
-    } else {
-        panic!("Wrong variant");
-    }
-}
-
-#[test]
-fn test_librage_crypto_conversion() {
-    let source = librage::LibrageError::DecryptionFailed("bad MAC".into());
-    let err = AgeCredentialsError::Crypto {
-        operation: "decrypt",
-        identity: None,
-        source,
-    };
-    if let AgeCredentialsError::Crypto {
-        operation, source, ..
-    } = &err
-    {
-        assert_eq!(*operation, "decrypt");
-        assert!(format!("{}", source).contains("bad MAC"));
     } else {
         panic!("Wrong variant");
     }

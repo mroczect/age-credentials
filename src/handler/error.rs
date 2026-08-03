@@ -18,14 +18,6 @@ pub enum AgeCredentialsError {
         source: serde_json::Error,
     },
 
-    #[error("Crypto error in {operation} (identity: {identity:?}): {source}")]
-    Crypto {
-        operation: &'static str,
-        identity: Option<String>,
-        #[source]
-        source: librage::LibrageError,
-    },
-
     #[error("Duplicate identity {fingerprint} in keyring at {keyring_path}")]
     DuplicateIdentity {
         fingerprint: String,
@@ -47,19 +39,19 @@ pub enum AgeCredentialsError {
     #[error("Passphrase incorrect for identity {identity}")]
     PassphraseIncorrect { identity: String },
 
-    #[error("Encryption failed for recipients {recipients:?}: {source}")]
+    #[error("Encryption failed for recipients {recipients:?}: [{code}] {message}")]
     EncryptionFailed {
         recipients: Vec<String>,
-        #[source]
-        source: librage::LibrageError,
+        code: String,
+        message: String,
     },
 
-    #[error("Decryption failed for identity {identity:?} (hint: {hint}): {source}")]
+    #[error("Decryption failed for identity {identity:?} (hint: {hint}): [{code}] {message}")]
     DecryptionFailed {
         identity: Option<String>,
         hint: String,
-        #[source]
-        source: librage::LibrageError,
+        code: String,
+        message: String,
     },
 
     #[error("Key generation failed: {reason}")]
