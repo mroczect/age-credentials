@@ -68,6 +68,9 @@ pub enum AgeCredentialsError {
 
     #[error("Configuration error: {message} (at {location})")]
     Config { message: String, location: String },
+
+    #[error("Passphrase too short: {length} chars, minimum {min_length}")]
+    PassphraseTooShort { length: usize, min_length: usize },
 }
 
 pub type Result<T> = std::result::Result<T, AgeCredentialsError>;
