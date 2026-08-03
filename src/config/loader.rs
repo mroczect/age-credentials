@@ -28,8 +28,8 @@ impl ConfigLoader {
         let metadata: Metadata =
             serde_json::from_str(&data).map_err(|e| AgeCredentialsError::Serialization {
                 target: "metadata",
-                path,
-                source: e,
+                path: path.clone(),
+                source: Box::new(e),
             })?;
         Ok(metadata)
     }
@@ -40,7 +40,7 @@ impl ConfigLoader {
             AgeCredentialsError::Serialization {
                 target: "metadata",
                 path: path.clone(),
-                source: e,
+                source: Box::new(e),
             }
         })?;
         let parent = path.parent().ok_or_else(|| AgeCredentialsError::Config {

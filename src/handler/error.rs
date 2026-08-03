@@ -14,8 +14,7 @@ pub enum AgeCredentialsError {
     Serialization {
         target: &'static str,
         path: PathBuf,
-        #[source]
-        source: serde_json::Error,
+        source: Box<dyn std::error::Error + Send + Sync>,
     },
 
     #[error("Duplicate identity {fingerprint} in keyring at {keyring_path}")]
