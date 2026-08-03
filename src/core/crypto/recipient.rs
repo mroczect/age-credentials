@@ -3,9 +3,9 @@ use std::io::{BufRead, BufReader};
 use std::path::Path;
 
 pub fn read_recipients_from_file(path: impl AsRef<Path>) -> Result<Vec<String>> {
-    let path = path.as_ref().to_path_buf();
-    let file = std::fs::File::open(&path).map_err(|e| AgeCredentialsError::Io {
-        path: path.clone(),
+    let path = path.as_ref();
+    let file = std::fs::File::open(path).map_err(|e| AgeCredentialsError::Io {
+        path: path.to_path_buf(),
         source: e,
     })?;
     let reader = BufReader::new(file);
@@ -13,7 +13,7 @@ pub fn read_recipients_from_file(path: impl AsRef<Path>) -> Result<Vec<String>> 
 
     for (line_no, line) in reader.lines().enumerate() {
         let line = line.map_err(|e| AgeCredentialsError::Io {
-            path: path.clone(),
+            path: path.to_path_buf(),
             source: e,
         })?;
         let trimmed = line.trim();

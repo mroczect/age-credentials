@@ -4,10 +4,10 @@ use crate::handler::types::KeyGenData;
 pub fn generate_keypair() -> Result<KeyGenData> {
     let response = librage::generate_keypair();
     if !response.success {
-        let reason = response
-            .error
-            .map(|e| format!("{}: {}", e.code, e.message))
-            .unwrap_or_else(|| "Unknown librage error".to_string());
+        let reason = match response.error {
+            Some(e) => format!("{}: {}", e.code, e.message),
+            None => "Unknown librage error".to_string(),
+        };
         return Err(AgeCredentialsError::KeyGenFailed { reason });
     }
     let data = response

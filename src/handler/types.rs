@@ -1,3 +1,4 @@
+use crate::AgeCredentialsError;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use zeroize::Zeroizing;
@@ -6,10 +7,12 @@ use zeroize::Zeroizing;
 pub struct Fingerprint(String);
 
 impl Fingerprint {
-    pub fn new(hex: impl Into<String>) -> Result<Self, String> {
+    pub fn new(hex: impl Into<String>) -> Result<Self, AgeCredentialsError> {
         let hex = hex.into();
         if hex.is_empty() || !hex.chars().all(|c| c.is_ascii_hexdigit()) {
-            return Err("Fingerprint must be non-empty hexadecimal".to_string());
+            return Err(AgeCredentialsError::InvalidFingerprint {
+                reason: "must be non-empty hexadecimal".into(),
+            });
         }
         Ok(Fingerprint(hex))
     }
@@ -28,14 +31,21 @@ pub struct UserID {
 }
 
 impl UserID {
-    pub fn new(name: impl Into<String>, email: impl Into<String>) -> Result<Self, String> {
+    pub fn new(
+        name: impl Into<String>,
+        email: impl Into<String>,
+    ) -> Result<Self, AgeCredentialsError> {
         let name = name.into();
         let email = email.into();
         if name.trim().is_empty() {
-            return Err("Name cannot be empty".to_string());
+            return Err(AgeCredentialsError::InvalidUserId {
+                reason: "Name cannot be empty".into(),
+            });
         }
         if !email.contains('@') {
-            return Err("Email must contain '@'".to_string());
+            return Err(AgeCredentialsError::InvalidUserId {
+                reason: "Email must contain '@'".into(),
+            });
         }
         Ok(Self { name, email })
     }

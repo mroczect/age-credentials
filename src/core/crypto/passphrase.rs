@@ -11,14 +11,27 @@ pub fn encrypt_with_passphrase(plaintext: &[u8], passphrase: &str) -> Result<Vec
     }
     let response = librage::encrypt_with_passphrase(plaintext, passphrase);
     if !response.success {
-        let err = response.error.expect("error field missing");
+        let err = response
+            .error
+            .ok_or_else(|| AgeCredentialsError::EncryptionFailed {
+                recipients: vec!["<passphrase>".to_owned()],
+                code: "UNKNOWN".into(),
+                message: "librage returned failure without error details".into(),
+            })?;
         return Err(AgeCredentialsError::EncryptionFailed {
             recipients: vec!["<passphrase>".to_owned()],
             code: err.code,
             message: err.message,
         });
     }
-    Ok(response.data.unwrap().ciphertext.to_vec())
+    let data = response
+        .data
+        .ok_or_else(|| AgeCredentialsError::EncryptionFailed {
+            recipients: vec!["<passphrase>".to_owned()],
+            code: "UNKNOWN".into(),
+            message: "librage returned success but no data".into(),
+        })?;
+    Ok(data.ciphertext.to_vec())
 }
 
 pub fn decrypt_with_passphrase(ciphertext: &[u8], passphrase: &str) -> Result<Vec<u8>> {
@@ -30,7 +43,14 @@ pub fn decrypt_with_passphrase(ciphertext: &[u8], passphrase: &str) -> Result<Ve
     }
     let response = librage::decrypt_with_passphrase(ciphertext, passphrase);
     if !response.success {
-        let err = response.error.expect("error field missing");
+        let err = response
+            .error
+            .ok_or_else(|| AgeCredentialsError::DecryptionFailed {
+                identity: None,
+                hint: "librage returned failure without error details".into(),
+                code: "UNKNOWN".into(),
+                message: "librage returned failure without error details".into(),
+            })?;
         return Err(AgeCredentialsError::DecryptionFailed {
             identity: None,
             hint: "Check passphrase".into(),
@@ -38,5 +58,13 @@ pub fn decrypt_with_passphrase(ciphertext: &[u8], passphrase: &str) -> Result<Ve
             message: err.message,
         });
     }
-    Ok(response.data.unwrap().plaintext.to_vec())
+    let data = response
+        .data
+        .ok_or_else(|| AgeCredentialsError::DecryptionFailed {
+            identity: None,
+            hint: "librage returned success but no data".into(),
+            code: "UNKNOWN".into(),
+            message: "librage returned success but no data".into(),
+        })?;
+    Ok(data.plaintext.to_vec())
 }
