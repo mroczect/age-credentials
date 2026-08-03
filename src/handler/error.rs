@@ -71,6 +71,12 @@ pub enum AgeCredentialsError {
 
     #[error("Passphrase too short: {length} chars, minimum {min_length}")]
     PassphraseTooShort { length: usize, min_length: usize },
+
+    #[error("Invalid fingerprint: {reason}")]
+    InvalidFingerprint { reason: String },
+
+    #[error("Invalid User ID: {reason}")]
+    InvalidUserId { reason: String },
 }
 
 pub type Result<T> = std::result::Result<T, AgeCredentialsError>;
