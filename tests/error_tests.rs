@@ -201,3 +201,19 @@ fn test_passphrase_too_short_display() {
     assert!(msg.contains("8"));
     assert!(msg.to_lowercase().contains("too short"));
 }
+
+#[test]
+fn test_invalid_fingerprint_display() {
+    let err = AgeCredentialsError::InvalidFingerprint {
+        reason: "test reason".into(),
+    };
+    assert!(format!("{}", err).contains("test reason"));
+}
+
+#[test]
+fn test_invalid_userid_display() {
+    let err = AgeCredentialsError::InvalidUserId {
+        reason: "bad user".into(),
+    };
+    assert!(format!("{}", err).contains("bad user"));
+}
