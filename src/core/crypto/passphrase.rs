@@ -1,10 +1,12 @@
 use crate::handler::error::{AgeCredentialsError, Result};
 
+const MIN_PASSPHRASE_LEN: usize = 8;
+
 pub fn encrypt_with_passphrase(plaintext: &[u8], passphrase: &str) -> Result<Vec<u8>> {
-    if passphrase.is_empty() {
-        return Err(AgeCredentialsError::InvalidData {
-            context: "passphrase encrypt",
-            details: "passphrase is empty".into(),
+    if passphrase.len() < MIN_PASSPHRASE_LEN {
+        return Err(AgeCredentialsError::PassphraseTooShort {
+            length: passphrase.len(),
+            min_length: MIN_PASSPHRASE_LEN,
         });
     }
     let response = librage::encrypt_with_passphrase(plaintext, passphrase);
@@ -20,10 +22,10 @@ pub fn encrypt_with_passphrase(plaintext: &[u8], passphrase: &str) -> Result<Vec
 }
 
 pub fn decrypt_with_passphrase(ciphertext: &[u8], passphrase: &str) -> Result<Vec<u8>> {
-    if passphrase.is_empty() {
-        return Err(AgeCredentialsError::InvalidData {
-            context: "passphrase decrypt",
-            details: "passphrase is empty".into(),
+    if passphrase.len() < MIN_PASSPHRASE_LEN {
+        return Err(AgeCredentialsError::PassphraseTooShort {
+            length: passphrase.len(),
+            min_length: MIN_PASSPHRASE_LEN,
         });
     }
     let response = librage::decrypt_with_passphrase(ciphertext, passphrase);

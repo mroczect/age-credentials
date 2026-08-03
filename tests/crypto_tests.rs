@@ -1,7 +1,6 @@
 use age_credentials::core::crypto::*;
 use age_credentials::handler::error::AgeCredentialsError;
 
-// ----- Keygen & Basic Encrypt/Decrypt -----
 #[test]
 fn test_keygen_success() {
     let kp = generate_keypair().expect("keygen failed");
@@ -71,24 +70,36 @@ fn test_decrypt_wrong_key() {
 #[test]
 fn test_passphrase_roundtrip() {
     let plaintext = b"passphrase test";
-    let ciphertext = encrypt_with_passphrase(plaintext, "s3cret").unwrap();
-    let decrypted = decrypt_with_passphrase(&ciphertext, "s3cret").unwrap();
+    let ciphertext = encrypt_with_passphrase(plaintext, "strongpassword").unwrap();
+    let decrypted = decrypt_with_passphrase(&ciphertext, "strongpassword").unwrap();
     assert_eq!(decrypted, plaintext);
 }
 
 #[test]
-fn test_passphrase_empty() {
-    let err = encrypt_with_passphrase(b"data", "").unwrap_err();
+fn test_passphrase_too_short_encrypt() {
+    let err = encrypt_with_passphrase(b"data", "short").unwrap_err();
     match err {
-        AgeCredentialsError::InvalidData { .. } => {}
-        _ => panic!("Expected InvalidData"),
+        AgeCredentialsError::PassphraseTooShort { length, min_length } => {
+            assert_eq!(length, 5);
+            assert_eq!(min_length, 8);
+        }
+        _ => panic!("Expected PassphraseTooShort"),
+    }
+}
+
+#[test]
+fn test_passphrase_too_short_decrypt() {
+    let err = decrypt_with_passphrase(b"data", "short").unwrap_err();
+    match err {
+        AgeCredentialsError::PassphraseTooShort { .. } => {}
+        _ => panic!("Expected PassphraseTooShort"),
     }
 }
 
 #[test]
 fn test_decrypt_wrong_passphrase() {
-    let ciphertext = encrypt_with_passphrase(b"data", "correct").unwrap();
-    let err = decrypt_with_passphrase(&ciphertext, "wrong").unwrap_err();
+    let ciphertext = encrypt_with_passphrase(b"data", "correctpass").unwrap();
+    let err = decrypt_with_passphrase(&ciphertext, "wrongpass12").unwrap_err();
     match err {
         AgeCredentialsError::DecryptionFailed { code, .. } => {
             assert!(code.contains("DECRYPTION") || code.contains("FAILED"));
@@ -152,7 +163,6 @@ fn test_read_recipients_from_file_valid() {
     let dir = tempfile::tempdir().unwrap();
     let file_path = dir.path().join("recipients.txt");
     std::fs::write(&file_path, "age1...\n# comment\n\nage2...\n").unwrap();
-
     let recips = read_recipients_from_file(&file_path).unwrap();
     assert_eq!(recips, vec!["age1...", "age2..."]);
 }
@@ -162,7 +172,6 @@ fn test_read_recipients_from_file_invalid_key() {
     let dir = tempfile::tempdir().unwrap();
     let file_path = dir.path().join("bad.txt");
     std::fs::write(&file_path, "not-an-age-key").unwrap();
-
     let err = read_recipients_from_file(&file_path).unwrap_err();
     match err {
         AgeCredentialsError::InvalidData { details, .. } => {
@@ -177,7 +186,6 @@ fn test_read_recipients_from_file_empty() {
     let dir = tempfile::tempdir().unwrap();
     let file_path = dir.path().join("empty.txt");
     std::fs::write(&file_path, "# only comment\n").unwrap();
-
     let err = read_recipients_from_file(&file_path).unwrap_err();
     match err {
         AgeCredentialsError::InvalidData { details, .. } => {
