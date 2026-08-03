@@ -1,9 +1,11 @@
 use crate::handler::error::{AgeCredentialsError, Result};
 use std::path::Path;
+use zeroize::Zeroizing;
 
-pub fn read_encrypted_private_key(path: impl AsRef<Path>) -> Result<Vec<u8>> {
+pub fn read_encrypted_private_key(path: impl AsRef<Path>) -> Result<Zeroizing<Vec<u8>>> {
     let path = path.as_ref().to_path_buf();
-    std::fs::read(&path).map_err(|e| AgeCredentialsError::Io { path, source: e })
+    let data = std::fs::read(&path).map_err(|e| AgeCredentialsError::Io { path, source: e })?;
+    Ok(Zeroizing::new(data))
 }
 
 pub fn write_encrypted_private_key(path: impl AsRef<Path>, encrypted_key: &[u8]) -> Result<()> {
