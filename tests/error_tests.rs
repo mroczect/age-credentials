@@ -189,3 +189,15 @@ fn test_manual_io_conversion() {
         panic!("Wrong variant");
     }
 }
+
+#[test]
+fn test_passphrase_too_short_display() {
+    let err = AgeCredentialsError::PassphraseTooShort {
+        length: 3,
+        min_length: 8,
+    };
+    let msg = format!("{}", err);
+    assert!(msg.contains("3"));
+    assert!(msg.contains("8"));
+    assert!(msg.to_lowercase().contains("too short"));
+}
