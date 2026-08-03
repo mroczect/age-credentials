@@ -1,49 +1,81 @@
-use librage::LibrageError;
+use std::path::PathBuf;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum AgeCredentialsError {
-    #[error("I/O error: {0}")]
-    Io(#[from] std::io::Error),
+    #[error("I/O error at {path}: {source}")]
+    Io {
+        path: PathBuf,
+        #[source]
+        source: std::io::Error,
+    },
 
-    #[error("Serialization error: {0}")]
-    Serialization(#[from] serde_json::Error),
+    #[error("Serialization error for {target} at {path}: {source}")]
+    Serialization {
+        target: &'static str,
+        path: PathBuf,
+        #[source]
+        source: serde_json::Error,
+    },
 
-    #[error("Crypto error: {0}")]
-    Librage(#[from] LibrageError),
+    #[error("Crypto error in {operation} (identity: {identity:?}): {source}")]
+    Crypto {
+        operation: &'static str,
+        identity: Option<String>,
+        #[source]
+        source: librage::LibrageError,
+    },
 
-    #[error("Identity already exists: {0}")]
-    DuplicateIdentity(String),
+    #[error("Duplicate identity {fingerprint} in keyring at {keyring_path}")]
+    DuplicateIdentity {
+        fingerprint: String,
+        keyring_path: PathBuf,
+    },
 
-    #[error("Identity not found: {0}")]
-    IdentityNotFound(String),
+    #[error("Identity not found: {search_key} in keyring at {keyring_path}")]
+    IdentityNotFound {
+        search_key: String,
+        keyring_path: PathBuf,
+    },
 
-    #[error("Invalid email address: {0}")]
-    InvalidEmail(String),
+    #[error("Invalid email address: {email}")]
+    InvalidEmail { email: String },
 
-    #[error("Invalid name: {0}")]
-    InvalidName(String),
+    #[error("Invalid name: {name}")]
+    InvalidName { name: String },
 
-    #[error("Incorrect passphrase")]
-    PassphraseIncorrect,
+    #[error("Passphrase incorrect for identity {identity}")]
+    PassphraseIncorrect { identity: String },
 
-    #[error("Encryption failed: {0}")]
-    EncryptionFailed(String),
+    #[error("Encryption failed for recipients {recipients:?}: {source}")]
+    EncryptionFailed {
+        recipients: Vec<String>,
+        #[source]
+        source: librage::LibrageError,
+    },
 
-    #[error("Decryption failed: {0}")]
-    DecryptionFailed(String),
+    #[error("Decryption failed for identity {identity:?} (hint: {hint}): {source}")]
+    DecryptionFailed {
+        identity: Option<String>,
+        hint: String,
+        #[source]
+        source: librage::LibrageError,
+    },
 
-    #[error("Key generation failed: {0}")]
-    KeyGenFailed(String),
+    #[error("Key generation failed: {reason}")]
+    KeyGenFailed { reason: String },
 
-    #[error("Metadata file not found: {0}")]
-    MetadataNotFound(String),
+    #[error("Metadata file not found at {path}")]
+    MetadataNotFound { path: PathBuf },
 
-    #[error("Invalid data: {0}")]
-    InvalidData(String),
+    #[error("Invalid data in {context}: {details}")]
+    InvalidData {
+        context: &'static str,
+        details: String,
+    },
 
-    #[error("Configuration error: {0}")]
-    Config(String),
+    #[error("Configuration error: {message} (at {location})")]
+    Config { message: String, location: String },
 }
 
 pub type Result<T> = std::result::Result<T, AgeCredentialsError>;
