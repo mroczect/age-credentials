@@ -17,5 +17,13 @@ pub fn decrypt(ciphertext: &[u8], secret_key: &str) -> Result<Vec<u8>> {
             message: err.message,
         });
     }
-    Ok(response.data.unwrap().plaintext.to_vec())
+    let data = response
+        .data
+        .ok_or_else(|| AgeCredentialsError::DecryptionFailed {
+            identity: None,
+            hint: "librage returned success but no data".into(),
+            code: "UNKNOWN".into(),
+            message: "librage returned success but no data".into(),
+        })?;
+    Ok(data.plaintext.to_vec())
 }
