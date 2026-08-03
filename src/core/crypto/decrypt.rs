@@ -9,7 +9,14 @@ pub fn decrypt(ciphertext: &[u8], secret_key: &str) -> Result<Vec<u8>> {
     }
     let response = librage::decrypt(ciphertext, secret_key);
     if !response.success {
-        let err = response.error.expect("error field missing");
+        let err = response
+            .error
+            .ok_or_else(|| AgeCredentialsError::DecryptionFailed {
+                identity: None,
+                hint: "librage returned failure without error details".into(),
+                code: "UNKNOWN".into(),
+                message: "librage returned failure without error details".into(),
+            })?;
         return Err(AgeCredentialsError::DecryptionFailed {
             identity: None,
             hint: "Verify secret key or ciphertext integrity".into(),
