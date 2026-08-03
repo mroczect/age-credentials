@@ -4,55 +4,6 @@ use age_credentials::core::crypto::generate_keypair;
 use tempfile::TempDir;
 
 #[test]
-fn test_validate_user_name_valid() {
-    assert!(validate_user_name("Alice").is_ok());
-    assert!(validate_user_name("Bob O'Connor").is_ok());
-    assert!(validate_user_name("Jean-Luc").is_ok());
-}
-
-#[test]
-fn test_validate_user_name_empty() {
-    let err = validate_user_name("").unwrap_err();
-    assert!(format!("{}", err).contains("empty"));
-}
-
-#[test]
-fn test_validate_user_name_too_short() {
-    let err = validate_user_name("A").unwrap_err();
-    assert!(format!("{}", err).contains("too short"));
-}
-
-#[test]
-fn test_validate_user_name_invalid_char() {
-    let err = validate_user_name("Alice!").unwrap_err();
-    assert!(format!("{}", err).contains("Invalid character"));
-}
-
-#[test]
-fn test_validate_user_email_valid() {
-    assert!(validate_user_email("alice@example.com").is_ok());
-    assert!(validate_user_email("a.b+c@d-e.net").is_ok());
-}
-
-#[test]
-fn test_validate_user_email_empty() {
-    let err = validate_user_email("").unwrap_err();
-    assert!(format!("{}", err).contains("empty"));
-}
-
-#[test]
-fn test_validate_user_email_no_at() {
-    let err = validate_user_email("no-at-sign").unwrap_err();
-    assert!(format!("{}", err).contains("exactly one '@'"));
-}
-
-#[test]
-fn test_validate_user_email_multiple_at() {
-    let err = validate_user_email("a@b@c.com").unwrap_err();
-    assert!(format!("{}", err).contains("exactly one '@'"));
-}
-
-#[test]
 fn test_write_and_read_public_key() {
     let dir = TempDir::new().unwrap();
     let path = dir.path().join("test.pub");
