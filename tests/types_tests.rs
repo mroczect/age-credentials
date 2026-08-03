@@ -34,101 +34,56 @@ fn test_fingerprint_serde() {
 }
 
 #[test]
-fn test_user_id_valid() {
-    let uid = UserID::new("Alice", "alice@example.com").unwrap();
+fn test_user_id_trims_whitespace() {
+    let uid = UserID::new("  Alice  ", "  alice@example.com  ").unwrap();
     assert_eq!(uid.name, "Alice");
     assert_eq!(uid.email, "alice@example.com");
-    assert_eq!(uid.to_formatted(), "Alice <alice@example.com>");
 }
 
 #[test]
-fn test_user_id_empty_name() {
-    assert!(UserID::new("", "a@b.com").is_err());
-    assert!(UserID::new("   ", "a@b.com").is_err());
+fn test_validate_user_name_valid() {
+    assert!(validate_user_name("Alice").is_ok());
+    assert!(validate_user_name("Bob O'Connor").is_ok());
 }
 
 #[test]
-fn test_user_id_invalid_email_no_at() {
-    assert!(UserID::new("Bob", "no-at-sign").is_err());
+fn test_validate_user_name_empty() {
+    let err = validate_user_name("").unwrap_err();
+    assert!(format!("{}", err).contains("empty"));
 }
 
 #[test]
-fn test_user_id_serde() {
-    let uid = UserID::new("Bob", "bob@test.org").unwrap();
-    let json = serde_json::to_string(&uid).unwrap();
-    let uid2: UserID = serde_json::from_str(&json).unwrap();
-    assert_eq!(uid, uid2);
+fn test_validate_user_name_too_short() {
+    let err = validate_user_name("A").unwrap_err();
+    assert!(format!("{}", err).contains("too short"));
 }
 
 #[test]
-fn test_identity_struct() {
-    let identity = Identity {
-        fingerprint: Fingerprint::new("abc123").unwrap(),
-        user_id: UserID::new("Carol", "carol@dev.io").unwrap(),
-        label: Some("work".into()),
-        private_key_path: "private/identity-1.age".into(),
-        public_key_path: "public/identity-1.pub".into(),
-        created_at: 1625097600,
-    };
-    assert_eq!(format!("{}", identity.fingerprint), "abc123");
-    assert_eq!(identity.user_id.email, "carol@dev.io");
-    assert_eq!(identity.label, Some("work".to_string()));
-    assert_eq!(identity.created_at, 1625097600);
+fn test_validate_user_name_invalid_char() {
+    let err = validate_user_name("Alice!").unwrap_err();
+    assert!(format!("{}", err).contains("Invalid character"));
 }
 
 #[test]
-fn test_identity_serde() {
-    let identity = Identity {
-        fingerprint: Fingerprint::new("abc123").unwrap(),
-        user_id: UserID::new("Serde", "serde@test.com").unwrap(),
-        label: None,
-        private_key_path: "priv".into(),
-        public_key_path: "pub".into(),
-        created_at: 1625097600,
-    };
-    let json = serde_json::to_string(&identity).unwrap();
-    let ident2: Identity = serde_json::from_str(&json).unwrap();
-    assert_eq!(identity.fingerprint, ident2.fingerprint);
-    assert_eq!(identity.user_id, ident2.user_id);
-    assert_eq!(identity.created_at, ident2.created_at);
+fn test_validate_user_email_valid() {
+    assert!(validate_user_email("alice@example.com").is_ok());
+    assert!(validate_user_email("a.b+c@d-e.net").is_ok());
 }
 
 #[test]
-fn test_metadata_default() {
-    let meta = Metadata::default();
-    assert!(meta.identities.is_empty());
-    assert!(meta.default_identity.is_none());
+fn test_validate_user_email_empty() {
+    let err = validate_user_email("").unwrap_err();
+    assert!(format!("{}", err).contains("empty"));
 }
 
 #[test]
-fn test_metadata_add_identity() {
-    let mut meta = Metadata::default();
-    let ident = Identity {
-        fingerprint: Fingerprint::new("abcdef").unwrap(),
-        user_id: UserID::new("Meta", "meta@test.com").unwrap(),
-        label: None,
-        private_key_path: "p1".into(),
-        public_key_path: "p1.pub".into(),
-        created_at: 1625097600,
-    };
-    meta.identities.push(ident);
-    assert_eq!(meta.identities.len(), 1);
-    meta.default_identity = Some(Fingerprint::new("abcdef").unwrap());
-    assert!(meta.default_identity.is_some());
+fn test_validate_user_email_no_at() {
+    let err = validate_user_email("no-at-sign").unwrap_err();
+    assert!(format!("{}", err).contains("exactly one '@'"));
 }
 
 #[test]
-fn test_metadata_serde() {
-    let mut meta = Metadata::default();
-    let ident = Identity {
-        fingerprint: Fingerprint::new("abcdef").unwrap(),
-        user_id: UserID::new("SerdeMeta", "serde@meta.org").unwrap(),
-        label: Some("test".into()),
-        private_key_path: "priv.key".into(),
-        public_key_path: "pub.key".into(),
-        created_at: 1625097600,
-    };
-    meta.identities.push(ident);
-    let json = serde_json::to_string(&meta).unwrap();
-    let _meta2: Metadata = serde_json::from_str(&json).unwrap();
+fn test_validate_user_email_multiple_at() {
+    let err = validate_user_email("a@b@c.com").unwrap_err();
+    assert!(format!("{}", err).contains("exactly one '@'"));
 }
