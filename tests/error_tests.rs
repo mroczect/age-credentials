@@ -15,7 +15,8 @@ fn test_io_error_display() {
 
 #[test]
 fn test_serialization_error_display() {
-    let source = serde_json::from_str::<serde_json::Value>("invalid").unwrap_err();
+    let source: Box<dyn std::error::Error + Send + Sync> =
+        Box::new(serde_json::from_str::<serde_json::Value>("invalid").unwrap_err());
     let err = AgeCredentialsError::Serialization {
         target: "metadata",
         path: "/tmp/metadata.json".into(),
