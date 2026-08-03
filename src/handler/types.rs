@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::time::SystemTime;
+use zeroize::Zeroizing;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct Fingerprint(pub String);
@@ -44,4 +45,10 @@ pub struct Identity {
 pub struct Metadata {
     pub identities: Vec<Identity>,
     pub default_identity: Option<Fingerprint>,
+}
+
+#[derive(Debug, Clone)]
+pub struct KeyGenData {
+    pub public_key: String,
+    pub secret_key: Zeroizing<String>,
 }
