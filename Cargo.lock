@@ -1005,7 +1005,8 @@ checksum = "b6d2cec3eae94f9f509c767b45932f1ada8350c4bdb85af2fcab4a3c14807981"
 [[package]]
 name = "librage"
 version = "1.1.0"
-source = "git+https://github.com/mroczect/librage.git#049d62bb442481562d06d14cd0b8b465b4e5e211"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e6fdb4744633c5ecd45c3e2e6444ba1dbc79c2271ea30520b4ce0d712c6435dc"
 dependencies = [
  "age",
  "hex",
