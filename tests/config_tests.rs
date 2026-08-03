@@ -27,8 +27,8 @@ fn test_save_and_load_metadata() {
     let dir = TempDir::new().unwrap();
     let kp = KeyringPath::new(dir.path()).unwrap();
     let meta = Metadata::default();
-    ConfigLoader::save(&kp.metadata_file(), &meta).unwrap();
-    let loaded = ConfigLoader::load(&kp.metadata_file()).unwrap();
+    ConfigLoader::save(kp.metadata_file(), &meta).unwrap();
+    let loaded = ConfigLoader::load(kp.metadata_file()).unwrap();
     assert!(loaded.identities.is_empty());
 }
 
@@ -36,7 +36,7 @@ fn test_save_and_load_metadata() {
 fn test_load_missing_file() {
     let dir = TempDir::new().unwrap();
     let kp = KeyringPath::new(dir.path()).unwrap();
-    let err = ConfigLoader::load(&kp.metadata_file()).unwrap_err();
+    let err = ConfigLoader::load(kp.metadata_file()).unwrap_err();
     match err {
         AgeCredentialsError::Io { .. } => {}
         _ => panic!("Expected Io error"),
