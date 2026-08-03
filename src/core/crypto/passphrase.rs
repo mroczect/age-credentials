@@ -1,6 +1,12 @@
 use crate::handler::error::{AgeCredentialsError, Result};
 
 pub fn encrypt_with_passphrase(plaintext: &[u8], passphrase: &str) -> Result<Vec<u8>> {
+    if passphrase.is_empty() {
+        return Err(AgeCredentialsError::InvalidData {
+            context: "passphrase encrypt",
+            details: "passphrase is empty".into(),
+        });
+    }
     let response = librage::encrypt_with_passphrase(plaintext, passphrase);
     if !response.success {
         let err = response.error.expect("error field missing");
@@ -14,6 +20,12 @@ pub fn encrypt_with_passphrase(plaintext: &[u8], passphrase: &str) -> Result<Vec
 }
 
 pub fn decrypt_with_passphrase(ciphertext: &[u8], passphrase: &str) -> Result<Vec<u8>> {
+    if passphrase.is_empty() {
+        return Err(AgeCredentialsError::InvalidData {
+            context: "passphrase decrypt",
+            details: "passphrase is empty".into(),
+        });
+    }
     let response = librage::decrypt_with_passphrase(ciphertext, passphrase);
     if !response.success {
         let err = response.error.expect("error field missing");

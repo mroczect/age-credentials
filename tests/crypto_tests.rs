@@ -1,6 +1,7 @@
 use age_credentials::core::crypto::*;
 use age_credentials::handler::error::AgeCredentialsError;
 
+// ----- Keygen & Basic Encrypt/Decrypt -----
 #[test]
 fn test_keygen_success() {
     let kp = generate_keypair().expect("keygen failed");
@@ -18,6 +19,17 @@ fn test_encrypt_decrypt_roundtrip() {
 }
 
 #[test]
+fn test_encrypt_empty_public_key() {
+    let err = encrypt(b"data", "").unwrap_err();
+    match err {
+        AgeCredentialsError::InvalidData { details, .. } => {
+            assert!(details.contains("empty"));
+        }
+        _ => panic!("Wrong error variant"),
+    }
+}
+
+#[test]
 fn test_encrypt_invalid_public_key() {
     let err = encrypt(b"data", "not-a-valid-key").unwrap_err();
     match err {
@@ -26,6 +38,17 @@ fn test_encrypt_invalid_public_key() {
         } => {
             assert!(code.contains("INVALID") || code.contains("FAILED"));
             assert_eq!(recipients, vec!["not-a-valid-key"]);
+        }
+        _ => panic!("Wrong error variant"),
+    }
+}
+
+#[test]
+fn test_decrypt_empty_secret_key() {
+    let err = decrypt(b"dummy", "").unwrap_err();
+    match err {
+        AgeCredentialsError::InvalidData { details, .. } => {
+            assert!(details.contains("empty"));
         }
         _ => panic!("Wrong error variant"),
     }
@@ -54,6 +77,15 @@ fn test_passphrase_roundtrip() {
 }
 
 #[test]
+fn test_passphrase_empty() {
+    let err = encrypt_with_passphrase(b"data", "").unwrap_err();
+    match err {
+        AgeCredentialsError::InvalidData { .. } => {}
+        _ => panic!("Expected InvalidData"),
+    }
+}
+
+#[test]
 fn test_decrypt_wrong_passphrase() {
     let ciphertext = encrypt_with_passphrase(b"data", "correct").unwrap();
     let err = decrypt_with_passphrase(&ciphertext, "wrong").unwrap_err();
@@ -74,4 +106,83 @@ fn test_encrypt_multiple() {
     let dec2 = decrypt(&ciphertext, &kp2.secret_key).unwrap();
     assert_eq!(dec1, dec2);
     assert_eq!(dec1, b"multi");
+}
+
+#[test]
+fn test_encrypt_multiple_empty_list() {
+    let err = encrypt_multiple(b"data", &[]).unwrap_err();
+    match err {
+        AgeCredentialsError::InvalidData { .. } => {}
+        _ => panic!("Expected InvalidData"),
+    }
+}
+
+#[test]
+fn test_encrypt_armored_roundtrip() {
+    let kp = generate_keypair().unwrap();
+    let plaintext = b"Armored test";
+    let armored = encrypt_armored(plaintext, &kp.public_key).unwrap();
+    assert!(armored.starts_with(b"-----BEGIN AGE ENCRYPTED FILE-----"));
+    let decrypted = decrypt(&armored, &kp.secret_key).unwrap();
+    assert_eq!(decrypted, plaintext);
+}
+
+#[test]
+fn test_encrypt_multiple_armored() {
+    let kp1 = generate_keypair().unwrap();
+    let kp2 = generate_keypair().unwrap();
+    let armored =
+        encrypt_multiple_armored(b"multi armored", &[&kp1.public_key, &kp2.public_key]).unwrap();
+    assert!(armored.starts_with(b"-----BEGIN AGE ENCRYPTED FILE-----"));
+    let dec1 = decrypt(&armored, &kp1.secret_key).unwrap();
+    assert_eq!(dec1, b"multi armored");
+}
+
+#[test]
+fn test_armor_empty_public_key() {
+    let err = encrypt_armored(b"data", "").unwrap_err();
+    match err {
+        AgeCredentialsError::InvalidData { .. } => {}
+        _ => panic!("Expected InvalidData"),
+    }
+}
+
+#[test]
+fn test_read_recipients_from_file_valid() {
+    let dir = tempfile::tempdir().unwrap();
+    let file_path = dir.path().join("recipients.txt");
+    std::fs::write(&file_path, "age1...\n# comment\n\nage2...\n").unwrap();
+
+    let recips = read_recipients_from_file(&file_path).unwrap();
+    assert_eq!(recips, vec!["age1...", "age2..."]);
+}
+
+#[test]
+fn test_read_recipients_from_file_invalid_key() {
+    let dir = tempfile::tempdir().unwrap();
+    let file_path = dir.path().join("bad.txt");
+    std::fs::write(&file_path, "not-an-age-key").unwrap();
+
+    let err = read_recipients_from_file(&file_path).unwrap_err();
+    match err {
+        AgeCredentialsError::InvalidData { details, .. } => {
+            assert!(details.contains("not-an-age-key"));
+        }
+        _ => panic!("Wrong error variant"),
+    }
+}
+
+#[test]
+fn test_read_recipients_from_file_empty() {
+    let dir = tempfile::tempdir().unwrap();
+    let file_path = dir.path().join("empty.txt");
+    std::fs::write(&file_path, "# only comment\n").unwrap();
+
+    let err = read_recipients_from_file(&file_path).unwrap_err();
+    match err {
+        AgeCredentialsError::InvalidData { details, .. } => {
+            assert!(details.contains("No valid recipient"));
+        }
+        _ => panic!("Wrong error variant"),
+    }
 }

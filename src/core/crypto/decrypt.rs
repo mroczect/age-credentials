@@ -1,6 +1,12 @@
 use crate::handler::error::{AgeCredentialsError, Result};
 
 pub fn decrypt(ciphertext: &[u8], secret_key: &str) -> Result<Vec<u8>> {
+    if secret_key.is_empty() {
+        return Err(AgeCredentialsError::InvalidData {
+            context: "decrypt",
+            details: "secret key is empty".into(),
+        });
+    }
     let response = librage::decrypt(ciphertext, secret_key);
     if !response.success {
         let err = response.error.expect("error field missing");
