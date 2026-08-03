@@ -8,39 +8,29 @@ pub fn read_public_key(path: impl AsRef<Path>) -> Result<String> {
         source: e,
     })?;
     let key = content.trim().to_string();
-    if key.is_empty() {
-        return Err(AgeCredentialsError::InvalidData {
-            context: "public key file",
-            details: format!("File is empty: {}", path.display()),
-        });
-    }
-    if !key.starts_with("age1") {
-        return Err(AgeCredentialsError::InvalidData {
-            context: "public key file",
-            details: format!(
-                "Invalid public key format (must start with 'age1'): {}",
-                path.display()
-            ),
-        });
-    }
+    validate_public_key_string(&key)?;
     Ok(key)
 }
 
 pub fn write_public_key(path: impl AsRef<Path>, public_key: &str) -> Result<()> {
     let path = path.as_ref().to_path_buf();
-    if public_key.is_empty() {
+    validate_public_key_string(public_key)?;
+    std::fs::write(&path, format!("{}\n", public_key))
+        .map_err(|e| AgeCredentialsError::Io { path, source: e })?;
+    Ok(())
+}
+
+fn validate_public_key_string(key: &str) -> Result<()> {
+    if key.is_empty() {
         return Err(AgeCredentialsError::InvalidData {
-            context: "public key write",
+            context: "public key",
             details: "Public key is empty".into(),
         });
     }
-    if !public_key.starts_with("age1") {
-        return Err(AgeCredentialsError::InvalidData {
-            context: "public key write",
-            details: "Public key must start with 'age1'".into(),
-        });
-    }
-    std::fs::write(&path, format!("{}\n", public_key))
-        .map_err(|e| AgeCredentialsError::Io { path, source: e })?;
+    key.parse::<age::x25519::Recipient>()
+        .map_err(|_| AgeCredentialsError::InvalidData {
+            context: "public key",
+            details: format!("Invalid age public key: {}", key),
+        })?;
     Ok(())
 }

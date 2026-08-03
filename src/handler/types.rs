@@ -37,16 +37,8 @@ impl UserID {
     ) -> Result<Self, AgeCredentialsError> {
         let name = name.into();
         let email = email.into();
-        if name.trim().is_empty() {
-            return Err(AgeCredentialsError::InvalidUserId {
-                reason: "Name cannot be empty".into(),
-            });
-        }
-        if !email.contains('@') {
-            return Err(AgeCredentialsError::InvalidUserId {
-                reason: "Email must contain '@'".into(),
-            });
-        }
+        crate::core::api::validate_user_name(&name)?;
+        crate::core::api::validate_user_email(&email)?;
         Ok(Self { name, email })
     }
 
