@@ -1,9 +1,13 @@
 use crate::handler::error::{AgeCredentialsError, Result};
+use std::fmt::Write;
 
 pub fn hex_encode(data: &[u8]) -> String {
-    data.iter().map(|b| format!("{:02x}", b)).collect()
+    let mut s = String::with_capacity(data.len() * 2);
+    for byte in data {
+        write!(&mut s, "{:02x}", byte).unwrap();
+    }
+    s
 }
-
 pub fn hex_decode(hex: &str) -> Result<Vec<u8>> {
     let hex = hex.trim();
     if hex.is_empty() {
