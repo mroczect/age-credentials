@@ -2,11 +2,28 @@ use crate::handler::error::{AgeCredentialsError, Result};
 use crate::handler::types::Metadata;
 use std::path::Path;
 
+const MAX_METADATA_SIZE: u64 = 5 * 1024 * 1024;
+
 pub struct ConfigLoader;
 
 impl ConfigLoader {
     pub fn load(path: impl AsRef<Path>) -> Result<Metadata> {
         let path = path.as_ref().to_path_buf();
+        let metadata = std::fs::metadata(&path).map_err(|e| AgeCredentialsError::Io {
+            path: path.clone(),
+            source: e,
+        })?;
+        if metadata.len() > MAX_METADATA_SIZE {
+            return Err(AgeCredentialsError::InvalidData {
+                context: "metadata file",
+                details: format!(
+                    "File too large: {} bytes (max {})",
+                    metadata.len(),
+                    MAX_METADATA_SIZE
+                ),
+            });
+        }
+
         let data = std::fs::read_to_string(&path).map_err(|e| AgeCredentialsError::Io {
             path: path.clone(),
             source: e,
@@ -22,7 +39,6 @@ impl ConfigLoader {
 
     pub fn save(path: impl AsRef<Path>, metadata: &Metadata) -> Result<()> {
         let path = path.as_ref().to_path_buf();
-        let tmp_path = path.with_extension("tmp");
         let json = serde_json::to_string_pretty(metadata).map_err(|e| {
             AgeCredentialsError::Serialization {
                 target: "metadata",
@@ -30,13 +46,25 @@ impl ConfigLoader {
                 source: e,
             }
         })?;
-        std::fs::write(&tmp_path, &json).map_err(|e| AgeCredentialsError::Io {
-            path: tmp_path.clone(),
-            source: e,
-        })?;
-        std::fs::rename(&tmp_path, &path).map_err(|e| AgeCredentialsError::Io {
+        let mut tmp = tempfile::NamedTempFile::new_in(path.parent().ok_or_else(|| {
+            AgeCredentialsError::Config {
+                message: "Metadata path has no parent directory".into(),
+                location: file!().to_string(),
+            }
+        })?)
+        .map_err(|e| AgeCredentialsError::Io {
             path: path.clone(),
             source: e,
+        })?;
+        std::io::Write::write_all(&mut tmp, json.as_bytes()).map_err(|e| {
+            AgeCredentialsError::Io {
+                path: path.clone(),
+                source: e,
+            }
+        })?;
+        tmp.persist(&path).map_err(|e| AgeCredentialsError::Io {
+            path: path.clone(),
+            source: e.error,
         })?;
         Ok(())
     }
