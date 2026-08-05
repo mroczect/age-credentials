@@ -1,5 +1,5 @@
-use age_credentials::core::crypto::*;
-use age_credentials::handler::error::AgeCredentialsError;
+use age_credentials::crypto::*;
+use age_credentials::domain::error::AccountError;
 
 #[test]
 fn test_keygen_success() {
@@ -21,7 +21,7 @@ fn test_encrypt_decrypt_roundtrip() {
 fn test_encrypt_empty_public_key() {
     let err = encrypt(b"data", "").unwrap_err();
     match err {
-        AgeCredentialsError::InvalidData { details, .. } => {
+        AccountError::InvalidData { details, .. } => {
             assert!(details.contains("empty"));
         }
         _ => panic!("Wrong error variant"),
@@ -32,7 +32,7 @@ fn test_encrypt_empty_public_key() {
 fn test_encrypt_invalid_public_key() {
     let err = encrypt(b"data", "not-a-valid-key").unwrap_err();
     match err {
-        AgeCredentialsError::EncryptionFailed {
+        AccountError::EncryptionFailed {
             code, recipients, ..
         } => {
             assert!(code.contains("INVALID") || code.contains("FAILED"));
@@ -46,7 +46,7 @@ fn test_encrypt_invalid_public_key() {
 fn test_decrypt_empty_secret_key() {
     let err = decrypt(b"dummy", "").unwrap_err();
     match err {
-        AgeCredentialsError::InvalidData { details, .. } => {
+        AccountError::InvalidData { details, .. } => {
             assert!(details.contains("empty"));
         }
         _ => panic!("Wrong error variant"),
@@ -60,7 +60,7 @@ fn test_decrypt_wrong_key() {
     let ciphertext = encrypt(b"secret", &kp1.public_key).unwrap();
     let err = decrypt(&ciphertext, &kp2.secret_key).unwrap_err();
     match err {
-        AgeCredentialsError::DecryptionFailed { code, .. } => {
+        AccountError::DecryptionFailed { code, .. } => {
             assert!(code.contains("NO_MATCHING") || code.contains("DECRYPTION"));
         }
         _ => panic!("Wrong error variant"),
@@ -79,7 +79,7 @@ fn test_passphrase_roundtrip() {
 fn test_passphrase_too_short_encrypt() {
     let err = encrypt_with_passphrase(b"data", "short").unwrap_err();
     match err {
-        AgeCredentialsError::PassphraseTooShort { length, min_length } => {
+        AccountError::PassphraseTooShort { length, min_length } => {
             assert_eq!(length, 5);
             assert_eq!(min_length, 8);
         }
@@ -91,7 +91,7 @@ fn test_passphrase_too_short_encrypt() {
 fn test_passphrase_too_short_decrypt() {
     let err = decrypt_with_passphrase(b"data", "short").unwrap_err();
     match err {
-        AgeCredentialsError::PassphraseTooShort { .. } => {}
+        AccountError::PassphraseTooShort { .. } => {}
         _ => panic!("Expected PassphraseTooShort"),
     }
 }
@@ -101,7 +101,7 @@ fn test_decrypt_wrong_passphrase() {
     let ciphertext = encrypt_with_passphrase(b"data", "correctpass").unwrap();
     let err = decrypt_with_passphrase(&ciphertext, "wrongpass12").unwrap_err();
     match err {
-        AgeCredentialsError::DecryptionFailed { code, .. } => {
+        AccountError::DecryptionFailed { code, .. } => {
             assert!(code.contains("DECRYPTION") || code.contains("FAILED"));
         }
         _ => panic!("Wrong error variant"),
@@ -123,7 +123,7 @@ fn test_encrypt_multiple() {
 fn test_encrypt_multiple_empty_list() {
     let err = encrypt_multiple(b"data", &[]).unwrap_err();
     match err {
-        AgeCredentialsError::InvalidData { .. } => {}
+        AccountError::InvalidData { .. } => {}
         _ => panic!("Expected InvalidData"),
     }
 }
@@ -153,7 +153,7 @@ fn test_encrypt_multiple_armored() {
 fn test_armor_empty_public_key() {
     let err = encrypt_armored(b"data", "").unwrap_err();
     match err {
-        AgeCredentialsError::InvalidData { .. } => {}
+        AccountError::InvalidData { .. } => {}
         _ => panic!("Expected InvalidData"),
     }
 }
@@ -174,7 +174,7 @@ fn test_read_recipients_from_file_invalid_key() {
     std::fs::write(&file_path, "not-an-age-key").unwrap();
     let err = read_recipients_from_file(&file_path).unwrap_err();
     match err {
-        AgeCredentialsError::InvalidData { details, .. } => {
+        AccountError::InvalidData { details, .. } => {
             assert!(details.contains("not-an-age-key"));
         }
         _ => panic!("Wrong error variant"),
@@ -188,7 +188,7 @@ fn test_read_recipients_from_file_empty() {
     std::fs::write(&file_path, "# only comment\n").unwrap();
     let err = read_recipients_from_file(&file_path).unwrap_err();
     match err {
-        AgeCredentialsError::InvalidData { details, .. } => {
+        AccountError::InvalidData { details, .. } => {
             assert!(details.contains("No valid recipient"));
         }
         _ => panic!("Wrong error variant"),
