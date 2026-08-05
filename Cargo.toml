@@ -1,8 +1,8 @@
 [package]
 name = "age-credentials"
-version = "0.3.0"
+version = "1.0.0"
 edition = "2024"
-description = "Age-based identity and credential management library"
+description = "Account management engine based on Age encryption – pure engine, no default backend"
 license = "MIT"
 repository = "https://github.com/mroczect/age-credentials"
 
@@ -11,13 +11,9 @@ thiserror = "2.0"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 zeroize = { version = "1", features = ["serde"] }
-dirs = "6"
 sha2 = "0.11"
-eyre = "0.6.12"
-color-eyre = "0.6.5"
-tracing = "0.1.44"
-tracing-subscriber = "0.3.23"
 tempfile = "3.27.0"
 age = "0.12.1"
 toml = "1.1.4"
 librage = "1.1.0"
+chrono = { version = "0.4", default-features = false, features = ["clock"] }

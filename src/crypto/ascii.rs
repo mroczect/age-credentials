@@ -1,4 +1,4 @@
-use crate::handler::error::{AgeCredentialsError, Result};
+use crate::domain::error::{AccountError, Result};
 use std::fmt::Write;
 
 pub fn hex_encode(data: &[u8]) -> String {
@@ -12,34 +12,26 @@ pub fn hex_encode(data: &[u8]) -> String {
 pub fn hex_decode(hex: &str) -> Result<Vec<u8>> {
     let hex = hex.trim();
     if hex.is_empty() {
-        return Err(AgeCredentialsError::InvalidData {
+        return Err(AccountError::InvalidData {
             context: "hex decode",
             details: "Input string is empty".into(),
         });
     }
     if !hex.len().is_multiple_of(2) {
-        return Err(AgeCredentialsError::InvalidData {
+        return Err(AccountError::InvalidData {
             context: "hex decode",
             details: format!("Input length {} is odd, must be even", hex.len()),
         });
     }
     let mut bytes = Vec::with_capacity(hex.len() / 2);
-    for (i, chunk) in hex.as_bytes().chunks(2).enumerate() {
-        let high = hex_char_to_val(chunk[0]).map_err(|_| AgeCredentialsError::InvalidData {
+    for chunk in hex.as_bytes().chunks(2) {
+        let high = hex_char_to_val(chunk[0]).map_err(|_| AccountError::InvalidData {
             context: "hex decode",
-            details: format!(
-                "Invalid hex character '{}' at position {}",
-                chunk[0] as char,
-                i * 2
-            ),
+            details: format!("Invalid hex character '{}'", chunk[0] as char),
         })?;
-        let low = hex_char_to_val(chunk[1]).map_err(|_| AgeCredentialsError::InvalidData {
+        let low = hex_char_to_val(chunk[1]).map_err(|_| AccountError::InvalidData {
             context: "hex decode",
-            details: format!(
-                "Invalid hex character '{}' at position {}",
-                chunk[1] as char,
-                i * 2 + 1
-            ),
+            details: format!("Invalid hex character '{}'", chunk[1] as char),
         })?;
         bytes.push(high << 4 | low);
     }
