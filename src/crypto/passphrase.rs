@@ -1,0 +1,67 @@
+use crate::domain::error::{AccountError, Result};
+
+const MIN_PASSPHRASE_LEN: usize = 8;
+
+pub fn encrypt_with_passphrase(plaintext: &[u8], passphrase: &str) -> Result<Vec<u8>> {
+    if passphrase.len() < MIN_PASSPHRASE_LEN {
+        return Err(AccountError::PassphraseTooShort {
+            length: passphrase.len(),
+            min_length: MIN_PASSPHRASE_LEN,
+        });
+    }
+    let response = librage::encrypt_with_passphrase(plaintext, passphrase);
+    if !response.success {
+        let err = response
+            .error
+            .ok_or_else(|| AccountError::EncryptionFailed {
+                recipients: vec!["<passphrase>".to_owned()],
+                code: "UNKNOWN".into(),
+                message: "librage returned failure without error details".into(),
+            })?;
+        return Err(AccountError::EncryptionFailed {
+            recipients: vec!["<passphrase>".to_owned()],
+            code: err.code,
+            message: err.message,
+        });
+    }
+    let data = response
+        .data
+        .ok_or_else(|| AccountError::EncryptionFailed {
+            recipients: vec!["<passphrase>".to_owned()],
+            code: "UNKNOWN".into(),
+            message: "librage returned success but no data".into(),
+        })?;
+    Ok(data.ciphertext.to_vec())
+}
+
+pub fn decrypt_with_passphrase(ciphertext: &[u8], passphrase: &str) -> Result<Vec<u8>> {
+    if passphrase.len() < MIN_PASSPHRASE_LEN {
+        return Err(AccountError::PassphraseTooShort {
+            length: passphrase.len(),
+            min_length: MIN_PASSPHRASE_LEN,
+        });
+    }
+    let response = librage::decrypt_with_passphrase(ciphertext, passphrase);
+    if !response.success {
+        let err = response
+            .error
+            .ok_or_else(|| AccountError::DecryptionFailed {
+                hint: "librage returned failure without error details".into(),
+                code: "UNKNOWN".into(),
+                message: "librage returned failure without error details".into(),
+            })?;
+        return Err(AccountError::DecryptionFailed {
+            hint: "Check passphrase".into(),
+            code: err.code,
+            message: err.message,
+        });
+    }
+    let data = response
+        .data
+        .ok_or_else(|| AccountError::DecryptionFailed {
+            hint: "librage returned success but no data".into(),
+            code: "UNKNOWN".into(),
+            message: "librage returned success but no data".into(),
+        })?;
+    Ok(data.plaintext.to_vec())
+}
