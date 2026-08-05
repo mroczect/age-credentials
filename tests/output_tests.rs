@@ -1,5 +1,5 @@
-use age_credentials::AgeCredentialsError;
-use age_credentials::output::*;
+use age_credentials::crypto::ascii::{hex_decode, hex_encode};
+use age_credentials::domain::error::AccountError;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
@@ -21,7 +21,7 @@ fn test_hex_encode_decode_roundtrip() {
 fn test_hex_decode_empty() {
     let err = hex_decode("").unwrap_err();
     match err {
-        AgeCredentialsError::InvalidData { .. } => {}
+        AccountError::InvalidData { .. } => {}
         _ => panic!("Wrong error"),
     }
 }
@@ -30,7 +30,7 @@ fn test_hex_decode_empty() {
 fn test_hex_decode_odd_length() {
     let err = hex_decode("abc").unwrap_err();
     match err {
-        AgeCredentialsError::InvalidData { details, .. } => {
+        AccountError::InvalidData { details, .. } => {
             assert!(details.contains("odd"));
         }
         _ => panic!("Wrong error"),
@@ -41,7 +41,7 @@ fn test_hex_decode_odd_length() {
 fn test_hex_decode_invalid_char() {
     let err = hex_decode("abz0").unwrap_err();
     match err {
-        AgeCredentialsError::InvalidData { details, .. } => {
+        AccountError::InvalidData { details, .. } => {
             assert!(details.contains("Invalid hex character"));
         }
         _ => panic!("Wrong error"),
@@ -54,36 +54,13 @@ fn test_json_roundtrip() {
         name: "Alice".into(),
         value: 42,
     };
-    let json = to_json_pretty(&obj).unwrap();
-    let obj2: TestStruct = from_json(&json).unwrap();
+    let json = serde_json::to_string_pretty(&obj).unwrap();
+    let obj2: TestStruct = serde_json::from_str(&json).unwrap();
     assert_eq!(obj, obj2);
 }
 
 #[test]
 fn test_from_json_invalid() {
-    let err = from_json::<TestStruct>("not json").unwrap_err();
-    match err {
-        AgeCredentialsError::Serialization { .. } => {}
-        _ => panic!("Wrong error"),
-    }
-}
-
-#[test]
-fn test_toml_roundtrip() {
-    let obj = TestStruct {
-        name: "Bob".into(),
-        value: -7,
-    };
-    let toml_str = to_toml_pretty(&obj).unwrap();
-    let obj2: TestStruct = from_toml(&toml_str).unwrap();
-    assert_eq!(obj, obj2);
-}
-
-#[test]
-fn test_from_toml_invalid() {
-    let err = from_toml::<TestStruct>("not = toml").unwrap_err();
-    match err {
-        AgeCredentialsError::Serialization { .. } => {}
-        _ => panic!("Wrong error"),
-    }
+    let err = serde_json::from_str::<TestStruct>("not json").unwrap_err();
+    assert!(format!("{}", err).contains("expected"));
 }
