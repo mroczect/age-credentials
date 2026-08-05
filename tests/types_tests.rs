@@ -1,4 +1,6 @@
-use age_credentials::*;
+use age_credentials::domain::fingerprint::Fingerprint;
+use age_credentials::domain::types::UserID;
+use age_credentials::domain::validation::{validate_user_email, validate_user_name};
 
 #[test]
 fn test_fingerprint_valid_hex() {
