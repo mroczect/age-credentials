@@ -1,8 +1,9 @@
-//! let user_id = UserID::new("Alice Example", "alice@example.com")?;
-pub mod config;
-pub mod core;
-pub mod handler;
+pub mod account;
+pub mod backend;
+pub mod crypto;
+pub mod domain;
 
-pub use config::*;
-pub use core::*;
-pub use handler::*;
+pub use account::*;
+pub use backend::*;
+pub use crypto::*;
+pub use domain::*;
